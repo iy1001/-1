@@ -79,10 +79,15 @@ export async function loadKlines(symbol, interval, limit = 120) {
  */
 export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
   const onUpdateRef = useRef(onUpdate)
-  onUpdateRef.current = onUpdate
-
   const klinesRef = useRef(klines)
-  klinesRef.current = klines
+
+  useEffect(() => {
+    onUpdateRef.current = onUpdate
+  })
+
+  useEffect(() => {
+    klinesRef.current = klines
+  }, [klines])
 
   useEffect(() => {
     if (!klines || klines.length === 0) return
