@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { colors, fonts } from '../theme'
 import { fmtPrice, fmtVol, pad2, calcMA } from '../utils/helpers'
 

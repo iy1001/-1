@@ -1,0 +1,20 @@
+# Frontend components
+src/components/*.jsx    @agent-frontend
+src/index.css           @agent-frontend
+index.html              @agent-frontend
+
+# Backend
+server/                 @agent-backend
+
+# Shared data layer — requires both agents to review
+src/utils/              @agent-frontend @agent-backend
+src/theme.js            @agent-frontend @agent-backend
+src/hooks/              @agent-frontend @agent-backend
+
+# Infrastructure
+.github/                @agent-infra
+package.json            @agent-infra
+eslint.config.js        @agent-infra
+vitest.config.js        @agent-infra
+vite.config.js          @agent-infra
+.prettierrc             @agent-infra

@@ -3,9 +3,10 @@ import express from 'express'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 
 const app = express()
-const PORT = 3001
+const PORT = parseInt(process.env.PORT) || 3001
+const PROXY = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:7897'
 
-const PROXY = 'http://127.0.0.1:7897'
+console.log(`[server] using proxy: ${PROXY}`)
 const agent = new HttpsProxyAgent(PROXY)
 
 /* ═══════════════════ CCXT SETUP ═══════════════════ */
@@ -16,6 +17,11 @@ const exchange = new ccxt.binance({
 })
 
 /* ═══════════════════ API ═══════════════════ */
+
+// Health check
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() })
+})
 
 // Kline data: GET /api/klines?symbol=BTC/USDT&interval=1h&limit=120
 app.get('/api/klines', async (req, res) => {
@@ -64,9 +70,13 @@ app.get('/api/ticker', async (req, res) => {
 
 /* ═══════════════════ START ═══════════════════ */
 async function start() {
-  console.log('[server] loading exchange markets...')
-  await exchange.loadMarkets()
-  console.log('[server] markets loaded, starting server')
+  try {
+    console.log('[server] loading exchange markets...')
+    await exchange.loadMarkets()
+    console.log('[server] markets loaded, starting server')
+  } catch (err) {
+    console.warn('[server] failed to load markets, starting without them:', err.message)
+  }
 
   app.listen(PORT, () => {
     console.log(`[server] ccxt proxy running on http://localhost:${PORT}`)
@@ -74,3 +84,4 @@ async function start() {
 }
 
 start()
+

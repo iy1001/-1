@@ -1,0 +1,31 @@
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/components/**'
+          - 'src/index.css'
+          - 'index.html'
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'server/**'
+
+shared:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/utils/**'
+          - 'src/hooks/**'
+          - 'src/theme.js'
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+          - 'package.json'
+          - '*.config.*'
+          - '.prettierrc'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/__tests__/**'
