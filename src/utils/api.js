@@ -55,7 +55,7 @@ export function generateKlines(symbol, interval, count = 120) {
     const r4 = rand(s + 3)
 
     const vol = price * 0.003
-    const trend = (r1 - 0.47) * vol * 2.5
+    const trend = (r1 - 0.5) * vol * 2.5
     const open = price
     const close = price + trend
     const high = Math.max(open, close) + r2 * vol
@@ -215,8 +215,9 @@ export function useTickerWebSocket() {
   const [status, setStatus] = useState('disconnected')
 
   useEffect(() => {
-    // Combined stream: btcusdt@miniTicker/ethusdt@miniTicker/...
+    // Combined stream: wss://stream.binance.com:9443/stream?streams=btcusdt@miniTicker/ethusdt@miniTicker/...
     const streams = COINS.map((c) => c.symbol.toLowerCase() + '@miniTicker').join('/')
+    const COMBINED_WS = 'wss://stream.binance.com:9443/stream'
     let ws = null
     let reconnectTimer = null
     let alive = true
@@ -224,7 +225,7 @@ export function useTickerWebSocket() {
 
     function connect() {
       setStatus('reconnecting')
-      ws = new WebSocket(`${WS_BASE}/${streams}`)
+      ws = new WebSocket(`${COMBINED_WS}?streams=${streams}`)
 
       ws.onopen = () => {
         setStatus('connected')
@@ -234,17 +235,18 @@ export function useTickerWebSocket() {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data)
-          // miniTicker format: { e, s, c, o, h, l, v, q, E }
-          if (!msg.s) return
+          // Combined stream wraps payload in { stream, data }
+          const d = msg.data
+          if (!d || !d.s) return
           setTickers((prev) => ({
             ...prev,
-            [msg.s]: {
-              price: +msg.c,
-              open24h: +msg.o,
-              high24h: +msg.h,
-              low24h: +msg.l,
-              change: ((+msg.c - +msg.o) / +msg.o) * 100,
-              volume: +msg.v,
+            [d.s]: {
+              price: +d.c,
+              open24h: +d.o,
+              high24h: +d.h,
+              low24h: +d.l,
+              change: ((+d.c - +d.o) / +d.o) * 100,
+              volume: +d.v,
             },
           }))
         } catch (err) {

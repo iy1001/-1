@@ -43,12 +43,12 @@ export const INTERVALS = [
 
 /* ═══════════════════ SEED PRICES ═══════════════════ */
 export const SEED_PRICES = {
-  BTCUSDT: 67500,
-  ETHUSDT: 3550,
-  SOLUSDT: 172,
-  BNBUSDT: 615,
-  XRPUSDT: 0.62,
-  DOGEUSDT: 0.155,
-  ADAUSDT: 0.46,
-  AVAXUSDT: 38,
+  BTCUSDT: 64200,
+  ETHUSDT: 1730,
+  SOLUSDT: 74,
+  BNBUSDT: 588,
+  XRPUSDT: 1.15,
+  DOGEUSDT: 0.083,
+  ADAUSDT: 0.162,
+  AVAXUSDT: 6.3,
 }
