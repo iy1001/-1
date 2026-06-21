@@ -16,7 +16,11 @@ export default function StatsBar({ klines }) {
     { label: 'Period High', value: '$' + fmtPrice(high), color: colors.up },
     { label: 'Period Low', value: '$' + fmtPrice(low), color: colors.down },
     { label: 'Volume', value: fmtVol(vol), color: colors.text1 },
-    { label: 'Change', value: (up ? '+' : '') + change.toFixed(2) + '%', color: up ? colors.up : colors.down },
+    {
+      label: 'Change',
+      value: (up ? '+' : '') + change.toFixed(2) + '%',
+      color: up ? colors.up : colors.down,
+    },
     { label: 'Candles', value: klines.length, color: colors.text1 },
   ]
 

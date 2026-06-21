@@ -42,7 +42,8 @@ export default function CoinHeader({
           ${fmtPrice(price)}
         </div>
         <div style={{ ...styles.change, color: up ? colors.up : colors.down }}>
-          {up ? '+' : ''}{change.toFixed(2)}%
+          {up ? '+' : ''}
+          {change.toFixed(2)}%
         </div>
       </div>
 

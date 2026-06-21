@@ -1,19 +1,27 @@
-import { useEffect, useRef } from 'react'
-import { INTERVALS, SEED_PRICES } from '../theme'
+import { useEffect, useRef, useState } from 'react'
+import { INTERVALS, SEED_PRICES, COINS } from '../theme'
 import { rand } from './helpers'
 
 const WS_BASE = 'wss://stream.binance.com:9443/ws'
 const API_BASE = ''
 
 /**
+ * Convert BTCUSDT → BTC/USDT for ccxt
+ */
+function toCcxtSymbol(symbol) {
+  if (symbol.includes('/')) return symbol
+  return symbol.slice(0, -4) + '/' + symbol.slice(-4)
+}
+
+/**
  * Fetch kline data via ccxt backend proxy
  */
 export async function fetchKlines(symbol, interval, limit = 120) {
-  // ccxt uses format like "BTC/USDT", Binance WS uses "BTCUSDT"
-  const ccxtSymbol = symbol.includes('/') ? symbol : symbol.replace('USDT', '/USDT')
-  const res = await fetch(`${API_BASE}/api/klines?symbol=${ccxtSymbol}&interval=${interval}&limit=${limit}`, {
-    signal: AbortSignal.timeout(8000),
-  })
+  const ccxtSymbol = toCcxtSymbol(symbol)
+  const res = await fetch(
+    `${API_BASE}/api/klines?symbol=${ccxtSymbol}&interval=${interval}&limit=${limit}`,
+    { signal: AbortSignal.timeout(8000) }
+  )
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return await res.json()
 }
@@ -22,7 +30,7 @@ export async function fetchKlines(symbol, interval, limit = 120) {
  * Fetch ticker via ccxt backend proxy
  */
 export async function fetchTicker(symbol) {
-  const ccxtSymbol = symbol.includes('/') ? symbol : symbol.replace('USDT', '/USDT')
+  const ccxtSymbol = toCcxtSymbol(symbol)
   const res = await fetch(`${API_BASE}/api/ticker?symbol=${ccxtSymbol}`, {
     signal: AbortSignal.timeout(5000),
   })
@@ -62,25 +70,49 @@ export function generateKlines(symbol, interval, count = 120) {
 }
 
 /**
- * Fetch klines with automatic fallback to mock data
+ * Fetch klines with automatic fallback to mock data.
+ * Returns { data, isMock } so UI can show an indicator.
  */
 export async function loadKlines(symbol, interval, limit = 120) {
   try {
-    return await fetchKlines(symbol, interval, limit)
+    const data = await fetchKlines(symbol, interval, limit)
+    return { data, isMock: false }
   } catch {
-    return generateKlines(symbol, interval, limit)
+    return { data: generateKlines(symbol, interval, limit), isMock: true }
   }
 }
 
+/* ═══════════════════ WEBSOCKET HELPERS ═══════════════════ */
+
+/**
+ * Exponential backoff reconnect: 1s → 2s → 4s → 8s → 30s max
+ */
+function createReconnect() {
+  let delay = 1000
+  return {
+    next() {
+      const d = delay
+      delay = Math.min(delay * 2, 30000)
+      return d
+    },
+    reset() {
+      delay = 1000
+    },
+  }
+}
+
+/* ═══════════════════ KLINE WEBSOCKET ═══════════════════ */
+
 /**
  * WebSocket hook for real-time kline updates from Binance.
- * Calls onUpdate(newKlines) whenever a candle ticks or a new candle opens.
- * Auto-reconnects on disconnect.
+ * Returns connection status: 'connected' | 'reconnecting' | 'disconnected'
  */
 export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
   const onUpdateRef = useRef(onUpdate)
   const klinesRef = useRef(klines)
+  const [wsStatus, setWsStatus] = useState('disconnected')
 
+  // Always-fresh ref for callback (runs every render intentionally)
   useEffect(() => {
     onUpdateRef.current = onUpdate
   })
@@ -90,17 +122,26 @@ export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
   }, [klines])
 
   useEffect(() => {
-    if (!klines || klines.length === 0) return
+    if (!klines || klines.length === 0) {
+      setWsStatus('disconnected')
+      return
+    }
 
-    // Binance WS uses format "btcusdt@kline_1h"
     const wsSymbol = symbol.replace('/', '').toLowerCase()
     const stream = `${wsSymbol}@kline_${interval}`
     let ws = null
     let reconnectTimer = null
     let alive = true
+    const backoff = createReconnect()
 
     function connect() {
+      setWsStatus('reconnecting')
       ws = new WebSocket(`${WS_BASE}/${stream}`)
+
+      ws.onopen = () => {
+        setWsStatus('connected')
+        backoff.reset()
+      }
 
       ws.onmessage = (event) => {
         try {
@@ -132,11 +173,16 @@ export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
             klinesRef.current = updated
             onUpdateRef.current(updated)
           }
-        } catch { /* ignore */ }
+        } catch (err) {
+          console.warn('[ws] parse error:', err.message)
+        }
       }
 
       ws.onclose = () => {
-        if (alive) reconnectTimer = setTimeout(connect, 3000)
+        if (alive) {
+          setWsStatus('reconnecting')
+          reconnectTimer = setTimeout(connect, backoff.next())
+        }
       }
 
       ws.onerror = () => {
@@ -149,7 +195,82 @@ export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
     return () => {
       alive = false
       clearTimeout(reconnectTimer)
+      setWsStatus('disconnected')
       ws?.close()
     }
   }, [symbol, interval])
+
+  return wsStatus
+}
+
+/* ═══════════════════ TICKER WEBSOCKET ═══════════════════ */
+
+/**
+ * WebSocket hook for real-time ticker prices for all watchlist coins.
+ * Subscribes to Binance combined miniTicker stream.
+ * Returns { tickers: { BTCUSDT: { price, change }, ... }, status }
+ */
+export function useTickerWebSocket() {
+  const [tickers, setTickers] = useState({})
+  const [status, setStatus] = useState('disconnected')
+
+  useEffect(() => {
+    // Combined stream: btcusdt@miniTicker/ethusdt@miniTicker/...
+    const streams = COINS.map((c) => c.symbol.toLowerCase() + '@miniTicker').join('/')
+    let ws = null
+    let reconnectTimer = null
+    let alive = true
+    const backoff = createReconnect()
+
+    function connect() {
+      setStatus('reconnecting')
+      ws = new WebSocket(`${WS_BASE}/${streams}`)
+
+      ws.onopen = () => {
+        setStatus('connected')
+        backoff.reset()
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data)
+          // miniTicker format: { e, s, c, o, h, l, v, q, E }
+          if (!msg.s) return
+          setTickers((prev) => ({
+            ...prev,
+            [msg.s]: {
+              price: +msg.c,
+              open24h: +msg.o,
+              high24h: +msg.h,
+              low24h: +msg.l,
+              change: ((+msg.c - +msg.o) / +msg.o) * 100,
+              volume: +msg.v,
+            },
+          }))
+        } catch (err) {
+          console.warn('[ticker-ws] parse error:', err.message)
+        }
+      }
+
+      ws.onclose = () => {
+        if (alive) {
+          setStatus('reconnecting')
+          reconnectTimer = setTimeout(connect, backoff.next())
+        }
+      }
+
+      ws.onerror = () => ws?.close()
+    }
+
+    connect()
+
+    return () => {
+      alive = false
+      clearTimeout(reconnectTimer)
+      setStatus('disconnected')
+      ws?.close()
+    }
+  }, [])
+
+  return { tickers, status }
 }

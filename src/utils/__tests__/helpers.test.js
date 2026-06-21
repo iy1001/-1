@@ -86,7 +86,8 @@ describe('rand', () => {
 })
 
 describe('calcMA', () => {
-  const makeData = (closes) => closes.map((c, i) => ({ time: i, open: c, high: c, low: c, close: c, volume: 1 }))
+  const makeData = (closes) =>
+    closes.map((c, i) => ({ time: i, open: c, high: c, low: c, close: c, volume: 1 }))
 
   it('returns null for indices before the period window', () => {
     const data = makeData([10, 20, 30, 40, 50])

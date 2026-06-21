@@ -41,6 +41,47 @@ class MemoryCache {
 
 const cache = new MemoryCache(100)
 
+/* ═══════════════════ VALIDATION ═══════════════════ */
+const VALID_INTERVALS = new Set([
+  '1m',
+  '3m',
+  '5m',
+  '15m',
+  '30m',
+  '1h',
+  '2h',
+  '4h',
+  '6h',
+  '12h',
+  '1d',
+  '1w',
+])
+const SYMBOL_RE = /^[A-Z]{2,10}\/[A-Z]{2,10}$/
+const MAX_LIMIT = 1000
+
+function validateKlines(req, res, next) {
+  const symbol = (req.query.symbol || 'BTC/USDT').toUpperCase()
+  const interval = req.query.interval || '1h'
+  const limit = parseInt(req.query.limit) || 120
+
+  if (!SYMBOL_RE.test(symbol)) return res.status(400).json({ error: 'Invalid symbol format' })
+  if (!VALID_INTERVALS.has(interval)) return res.status(400).json({ error: 'Invalid interval' })
+  if (limit < 1 || limit > MAX_LIMIT)
+    return res.status(400).json({ error: `Limit must be 1-${MAX_LIMIT}` })
+
+  req.query.symbol = symbol
+  req.query.interval = interval
+  req.query.limit = String(Math.min(limit, MAX_LIMIT))
+  next()
+}
+
+function validateTicker(req, res, next) {
+  const symbol = (req.query.symbol || 'BTC/USDT').toUpperCase()
+  if (!SYMBOL_RE.test(symbol)) return res.status(400).json({ error: 'Invalid symbol format' })
+  req.query.symbol = symbol
+  next()
+}
+
 /* ═══════════════════ CORS ═══════════════════ */
 app.use((_req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -55,7 +96,9 @@ app.use((req, _res, next) => {
   req._startTime = Date.now()
   _res.on('finish', () => {
     const ms = Date.now() - req._startTime
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} ${_res.statusCode} ${ms}ms`)
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.path} ${_res.statusCode} ${ms}ms`
+    )
   })
   next()
 })
@@ -71,15 +114,15 @@ const exchange = new ccxt.binance({
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime(), cacheSize: cache.store.size })
+  res.json({ status: 'ok', uptime: Math.floor(process.uptime()) })
 })
 
 // Kline data: GET /api/klines?symbol=BTC/USDT&interval=1h&limit=120
-app.get('/api/klines', async (req, res) => {
+app.get('/api/klines', validateKlines, async (req, res) => {
   try {
-    const symbol = req.query.symbol || 'BTC/USDT'
-    const timeframe = req.query.interval || '1h'
-    const limit = parseInt(req.query.limit) || 120
+    const symbol = req.query.symbol
+    const timeframe = req.query.interval
+    const limit = parseInt(req.query.limit)
 
     const cacheKey = `klines:${symbol}:${timeframe}:${limit}`
     const cached = cache.get(cacheKey)
@@ -100,14 +143,14 @@ app.get('/api/klines', async (req, res) => {
     res.json(klines)
   } catch (err) {
     console.error('[klines] error:', err.message)
-    res.status(500).json({ error: err.message })
+    res.status(502).json({ error: 'Failed to fetch kline data' })
   }
 })
 
 // Ticker: GET /api/ticker?symbol=BTC/USDT
-app.get('/api/ticker', async (req, res) => {
+app.get('/api/ticker', validateTicker, async (req, res) => {
   try {
-    const symbol = req.query.symbol || 'BTC/USDT'
+    const symbol = req.query.symbol
 
     const cacheKey = `ticker:${symbol}`
     const cached = cache.get(cacheKey)
@@ -128,7 +171,7 @@ app.get('/api/ticker', async (req, res) => {
     res.json(result)
   } catch (err) {
     console.error('[ticker] error:', err.message)
-    res.status(500).json({ error: err.message })
+    res.status(502).json({ error: 'Failed to fetch ticker data' })
   }
 })
 
@@ -148,4 +191,3 @@ async function start() {
 }
 
 start()
-

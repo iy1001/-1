@@ -4,7 +4,14 @@ import { fmtPrice, rand } from '../utils/helpers'
 /* ═══════════════════ STAR ICON ═══════════════════ */
 function StarIcon({ filled }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill={filled ? '#FFD600' : 'none'} stroke={filled ? '#FFD600' : '#C4C4C4'} strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill={filled ? '#FFD600' : 'none'}
+      stroke={filled ? '#FFD600' : '#C4C4C4'}
+      strokeWidth="2"
+    >
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   )
@@ -32,11 +39,18 @@ export default function Watchlist({ selected, onSelect, favorites, onToggleFav }
                 background: active ? colors.surface : 'transparent',
                 borderLeft: active ? `3px solid ${colors.ma25}` : '3px solid transparent',
               }}
-              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = colors.hover }}
-              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              onMouseEnter={(e) => {
+                if (!active) e.currentTarget.style.background = colors.hover
+              }}
+              onMouseLeave={(e) => {
+                if (!active) e.currentTarget.style.background = 'transparent'
+              }}
             >
               <button
-                onClick={(e) => { e.stopPropagation(); onToggleFav(coin.symbol) }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleFav(coin.symbol)
+                }}
                 style={styles.starBtn}
               >
                 <StarIcon filled={favorites.includes(coin.symbol)} />
@@ -51,7 +65,8 @@ export default function Watchlist({ selected, onSelect, favorites, onToggleFav }
               <div style={styles.prices}>
                 <div style={styles.price}>${fmtPrice(sp)}</div>
                 <div style={{ ...styles.change, color: up ? colors.up : colors.down }}>
-                  {up ? '+' : ''}{change.toFixed(2)}%
+                  {up ? '+' : ''}
+                  {change.toFixed(2)}%
                 </div>
               </div>
             </div>

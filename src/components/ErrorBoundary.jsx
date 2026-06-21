@@ -23,7 +23,10 @@ export default class ErrorBoundary extends Component {
             <div style={styles.icon}>!</div>
             <h2 style={styles.title}>Something went wrong</h2>
             <p style={styles.message}>{this.state.error?.message || 'Unknown error'}</p>
-            <button style={styles.button} onClick={() => this.setState({ hasError: false, error: null })}>
+            <button
+              style={styles.button}
+              onClick={() => this.setState({ hasError: false, error: null })}
+            >
               Try Again
             </button>
           </div>
