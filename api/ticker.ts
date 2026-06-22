@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { cache } from './_lib/cache'
-import { exchange } from './_lib/exchange'
+import { exchange, ensureMarkets } from './_lib/exchange'
 import { validateTickerParams } from './_lib/validate'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -31,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
 
+    await ensureMarkets()
     const ticker = await exchange.fetchTicker(symbol)
     const result = {
       symbol: ticker.symbol,
