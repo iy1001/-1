@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { cache } from './_lib/cache'
-import { exchange, ensureMarkets } from './_lib/exchange'
+import { fetchBinanceTicker } from './_lib/binance'
 import { validateTickerParams } from './_lib/validate'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -31,18 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
 
-    await ensureMarkets()
-    const ticker = await exchange.fetchTicker(symbol)
-    const result = {
-      symbol: ticker.symbol,
-      last: ticker.last ?? 0,
-      high: ticker.high ?? 0,
-      low: ticker.low ?? 0,
-      change: ticker.change ?? 0,
-      percentage: ticker.percentage ?? 0,
-      volume: ticker.baseVolume ?? 0,
-    }
-
+    const result = await fetchBinanceTicker(symbol)
     cache.set(cacheKey, result, 10_000) // 10s TTL
     res.json(result)
   } catch (err) {

@@ -1,16 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { cache } from './_lib/cache'
-import { exchange, ensureMarkets } from './_lib/exchange'
+import { fetchBinanceKlines } from './_lib/binance'
 import { validateKlineParams } from './_lib/validate'
-
-interface Kline {
-  time: number
-  open: number
-  high: number
-  low: number
-  close: number
-  volume: number
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // CORS
@@ -32,23 +23,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   try {
     const cacheKey = `klines:${symbol}:${interval}:${limit}`
-    const cached = cache.get(cacheKey) as Kline[] | null
+    const cached = cache.get(cacheKey)
     if (cached) {
       res.json(cached)
       return
     }
 
-    await ensureMarkets()
-    const ohlcv = await exchange.fetchOHLCV(symbol, interval, undefined, limit)
-    const klines: Kline[] = ohlcv.map((k) => ({
-      time: Number(k[0]) || 0,
-      open: Number(k[1]) || 0,
-      high: Number(k[2]) || 0,
-      low: Number(k[3]) || 0,
-      close: Number(k[4]) || 0,
-      volume: Number(k[5]) || 0,
-    }))
-
+    const klines = await fetchBinanceKlines(symbol, interval, limit)
     cache.set(cacheKey, klines, 30_000) // 30s TTL
     res.json(klines)
   } catch (err) {

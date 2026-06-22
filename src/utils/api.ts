@@ -7,7 +7,7 @@ const WS_BASE = 'wss://stream.binance.com:9443/ws'
 const API_BASE = ''
 
 /**
- * Convert BTCUSDT → BTC/USDT for ccxt
+ * Convert BTCUSDT → BTC/USDT for backend API
  */
 function toCcxtSymbol(symbol: string): string {
   if (symbol.includes('/')) return symbol
@@ -15,7 +15,7 @@ function toCcxtSymbol(symbol: string): string {
 }
 
 /**
- * Fetch kline data via ccxt backend proxy
+ * Fetch kline data via backend API (Binance REST proxy)
  */
 export async function fetchKlines(
   symbol: string,
@@ -32,7 +32,7 @@ export async function fetchKlines(
 }
 
 /**
- * Fetch ticker via ccxt backend proxy
+ * Fetch ticker via backend API (Binance REST proxy)
  */
 export async function fetchTicker(symbol: string): Promise<Record<string, unknown>> {
   const ccxtSymbol = toCcxtSymbol(symbol)
