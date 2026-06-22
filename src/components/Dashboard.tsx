@@ -82,6 +82,9 @@ export default function Dashboard() {
     setFavorites((prev) => (prev.includes(sym) ? prev.filter((s) => s !== sym) : [...prev, sym]))
   }, [])
 
+  const toggleMA7 = useCallback(() => setShowMA7((v) => !v), [])
+  const toggleMA25 = useCallback(() => setShowMA25((v) => !v), [])
+
   return (
     <div className="dashboard-root" style={styles.root}>
       {/* Top Bar */}
@@ -130,9 +133,9 @@ export default function Dashboard() {
             interval={interval}
             onChangeInterval={setInterval}
             showMA7={showMA7}
-            onToggleMA7={() => setShowMA7(!showMA7)}
+            onToggleMA7={toggleMA7}
             showMA25={showMA25}
-            onToggleMA25={() => setShowMA25(!showMA25)}
+            onToggleMA25={toggleMA25}
           />
 
           <div style={styles.chartArea}>

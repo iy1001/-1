@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { INTERVALS, SEED_PRICES } from '../theme'
 import { fmtPrice, fmtVol } from '../utils/helpers'
 import type { Coin, Kline } from '../types'
@@ -15,7 +16,7 @@ interface CoinHeaderProps {
 }
 
 /* ═══════════════════ COIN HEADER ═══════════════════ */
-export default function CoinHeader({
+function CoinHeader({
   coin,
   klines,
   interval,
@@ -118,6 +119,8 @@ export default function CoinHeader({
     </div>
   )
 }
+
+export default memo(CoinHeader)
 
 /* ═══════════════════ STYLES ═══════════════════ */
 const styles = {

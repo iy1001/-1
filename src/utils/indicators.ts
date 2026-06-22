@@ -34,7 +34,7 @@ export function calcEMA(data: Kline[], period: number): (number | null)[] {
 export function calcRSI(data: Kline[], period: number = 14): (number | null)[] {
   if (data.length < period + 1) return data.map(() => null)
 
-  const result: (number | null)[] = [null] // first element has no delta
+  const result: (number | null)[] = []
   const deltas: number[] = []
 
   for (let i = 1; i < data.length; i++) {
@@ -55,7 +55,7 @@ export function calcRSI(data: Kline[], period: number = 14): (number | null)[] {
   avgLoss /= period
 
   // RSI for the period-th index
-  const rs0 = avgLoss === 0 ? 100 : avgGain / avgLoss
+  const rs0 = avgLoss === 0 ? Infinity : avgGain / avgLoss
   result.push(100 - 100 / (1 + rs0))
 
   // Subsequent values: Wilder's smoothing
@@ -65,7 +65,7 @@ export function calcRSI(data: Kline[], period: number = 14): (number | null)[] {
     const loss = d < 0 ? Math.abs(d) : 0
     avgGain = (avgGain * (period - 1) + gain) / period
     avgLoss = (avgLoss * (period - 1) + loss) / period
-    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss
+    const rs = avgLoss === 0 ? Infinity : avgGain / avgLoss
     result.push(100 - 100 / (1 + rs))
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { fmtPrice, fmtVol, pad2, calcMA } from '../utils/helpers'
 import { calcEMA, calcBollinger } from '../utils/indicators'
 import type { Kline } from '../types'
@@ -52,7 +52,7 @@ const MAX_VISIBLE = 300
 const VOLUME_RATIO = 0.18 // volume sub-chart takes 18% of chart height
 
 /* ═══════════════════ KLINE CHART ═══════════════════ */
-export default function KlineChart({
+function KlineChart({
   klines,
   showMA7,
   showMA25,
@@ -598,6 +598,8 @@ export default function KlineChart({
     </div>
   )
 }
+
+export default memo(KlineChart)
 
 /* ═══════════════════ STYLES ═══════════════════ */
 const styles = {

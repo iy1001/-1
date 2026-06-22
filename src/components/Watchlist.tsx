@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo, useMemo } from 'react'
 import { COINS, SEED_PRICES } from '../theme'
 import { fmtPrice, fmtVol } from '../utils/helpers'
 import type { TickerMap } from '../types'
@@ -28,6 +28,75 @@ function StarIcon({ filled }: { filled: boolean }) {
   )
 }
 
+/* ═══════════════════ WATCHLIST ITEM (memoized) ═══════════════════ */
+interface WatchlistItemProps {
+  coin: { symbol: string; base: string; icon: string }
+  active: boolean
+  isFav: boolean
+  ticker: import('../types').Ticker | undefined
+  onSelect: (symbol: string) => void
+  onToggleFav: (symbol: string) => void
+}
+
+const WatchlistItem = memo(function WatchlistItem({
+  coin,
+  active,
+  isFav,
+  ticker,
+  onSelect,
+  onToggleFav,
+}: WatchlistItemProps) {
+  const [hovered, setHovered] = useState(false)
+  const price = ticker?.price ?? SEED_PRICES[coin.symbol] ?? 0
+  const change = ticker?.change ?? 0
+  const up = change >= 0
+
+  return (
+    <div
+      className={`watchlist-item${active ? ' active' : ''}`}
+      onClick={() => onSelect(coin.symbol)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        ...styles.item,
+        background: active
+          ? 'var(--color-surface)'
+          : hovered
+            ? 'var(--color-hover)'
+            : 'transparent',
+        borderLeft: active
+          ? '3px solid var(--color-ma25)'
+          : '3px solid transparent',
+      }}
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleFav(coin.symbol)
+        }}
+        style={styles.starBtn}
+      >
+        <StarIcon filled={isFav} />
+      </button>
+
+      <span style={styles.icon}>{coin.icon}</span>
+
+      <div style={styles.info}>
+        <div style={styles.base}>{coin.base}</div>
+        {ticker && <div style={styles.vol}>{fmtVol(ticker.volume)}</div>}
+      </div>
+
+      <div style={styles.prices}>
+        <div style={styles.price}>${fmtPrice(price)}</div>
+        <div style={{ ...styles.change, color: up ? 'var(--color-up)' : 'var(--color-down)' }}>
+          {up ? '+' : ''}
+          {change.toFixed(2)}%
+        </div>
+      </div>
+    </div>
+  )
+})
+
 /* ═══════════════════ WATCHLIST ═══════════════════ */
 export default function Watchlist({
   selected,
@@ -36,73 +105,32 @@ export default function Watchlist({
   onToggleFav,
   tickers = {},
 }: WatchlistProps) {
-  const [hovered, setHovered] = useState<string | null>(null)
-
-  // Sort: favorites first, then the rest
-  const sortedCoins = [...COINS].sort((a, b) => {
-    const aFav = favorites.includes(a.symbol) ? 0 : 1
-    const bFav = favorites.includes(b.symbol) ? 0 : 1
-    return aFav - bFav
-  })
+  // Sort: favorites first, then the rest — memoized to avoid re-sorting on every render
+  const sortedCoins = useMemo(
+    () =>
+      [...COINS].sort((a, b) => {
+        const aFav = favorites.includes(a.symbol) ? 0 : 1
+        const bFav = favorites.includes(b.symbol) ? 0 : 1
+        return aFav - bFav
+      }),
+    [favorites]
+  )
 
   return (
     <div style={styles.sidebar}>
       <div className="watchlist-title" style={styles.title}>Watchlist</div>
       <div className="watchlist-list" style={styles.list}>
-        {sortedCoins.map((coin) => {
-          const active = coin.symbol === selected
-          const isHovered = hovered === coin.symbol
-          const ticker = tickers[coin.symbol]
-          const price = ticker?.price ?? SEED_PRICES[coin.symbol] ?? 0
-          const change = ticker?.change ?? 0
-          const up = change >= 0
-
-          return (
-            <div
-              key={coin.symbol}
-              className={`watchlist-item${active ? ' active' : ''}`}
-              onClick={() => onSelect(coin.symbol)}
-              onMouseEnter={() => setHovered(coin.symbol)}
-              onMouseLeave={() => setHovered(null)}
-              style={{
-                ...styles.item,
-                background: active
-                  ? 'var(--color-surface)'
-                  : isHovered
-                    ? 'var(--color-hover)'
-                    : 'transparent',
-                borderLeft: active
-                  ? '3px solid var(--color-ma25)'
-                  : '3px solid transparent',
-              }}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onToggleFav(coin.symbol)
-                }}
-                style={styles.starBtn}
-              >
-                <StarIcon filled={favorites.includes(coin.symbol)} />
-              </button>
-
-              <span style={styles.icon}>{coin.icon}</span>
-
-              <div style={styles.info}>
-                <div style={styles.base}>{coin.base}</div>
-                {ticker && <div style={styles.vol}>{fmtVol(ticker.volume)}</div>}
-              </div>
-
-              <div style={styles.prices}>
-                <div style={styles.price}>${fmtPrice(price)}</div>
-                <div style={{ ...styles.change, color: up ? 'var(--color-up)' : 'var(--color-down)' }}>
-                  {up ? '+' : ''}
-                  {change.toFixed(2)}%
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {sortedCoins.map((coin) => (
+          <WatchlistItem
+            key={coin.symbol}
+            coin={coin}
+            active={coin.symbol === selected}
+            isFav={favorites.includes(coin.symbol)}
+            ticker={tickers[coin.symbol]}
+            onSelect={onSelect}
+            onToggleFav={onToggleFav}
+          />
+        ))}
       </div>
     </div>
   )
