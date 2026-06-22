@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { INTERVALS, SEED_PRICES, COINS } from '../theme'
 import { rand } from './helpers'
+import type { Kline, KlineLoadResult, TickerMap, WsStatus } from '../types'
 
 const WS_BASE = 'wss://stream.binance.com:9443/ws'
 const API_BASE = ''
@@ -8,7 +9,7 @@ const API_BASE = ''
 /**
  * Convert BTCUSDT → BTC/USDT for ccxt
  */
-function toCcxtSymbol(symbol) {
+function toCcxtSymbol(symbol: string): string {
   if (symbol.includes('/')) return symbol
   return symbol.slice(0, -4) + '/' + symbol.slice(-4)
 }
@@ -16,54 +17,49 @@ function toCcxtSymbol(symbol) {
 /**
  * Fetch kline data via ccxt backend proxy
  */
-export async function fetchKlines(symbol, interval, limit = 120) {
+export async function fetchKlines(
+  symbol: string,
+  interval: string,
+  limit: number = 120
+): Promise<Kline[]> {
   const ccxtSymbol = toCcxtSymbol(symbol)
   const res = await fetch(
     `${API_BASE}/api/klines?symbol=${ccxtSymbol}&interval=${interval}&limit=${limit}`,
     { signal: AbortSignal.timeout(8000) }
   )
   if (!res.ok) throw new Error(`API error ${res.status}`)
-  return await res.json()
+  return (await res.json()) as Kline[]
 }
 
 /**
  * Fetch ticker via ccxt backend proxy
  */
-export async function fetchTicker(symbol) {
+export async function fetchTicker(symbol: string): Promise<Record<string, unknown>> {
   const ccxtSymbol = toCcxtSymbol(symbol)
   const res = await fetch(`${API_BASE}/api/ticker?symbol=${ccxtSymbol}`, {
     signal: AbortSignal.timeout(5000),
   })
   if (!res.ok) throw new Error(`API error ${res.status}`)
-  return await res.json()
+  return (await res.json()) as Record<string, unknown>
 }
 
 /**
  * Generate mock kline data (fallback when backend unavailable)
  */
-export function generateKlines(symbol, interval, count = 120) {
+export function generateKlines(symbol: string, interval: string, count: number = 120): Kline[] {
   const ms = INTERVALS.find((i) => i.value === interval)?.ms || 60_000
   let price = SEED_PRICES[symbol] || 100
-  const out = []
+  const out: Kline[] = []
   const now = Date.now()
 
-  // Hash full interval string so "1m" and "1h" produce different seeds
-  let ivHash = 0
-  for (let c = 0; c < interval.length; c++) {
-    ivHash = ivHash * 31 + interval.charCodeAt(c)
-  }
-
-  // Scale per-candle volatility by interval duration (1m ≈ 0.08%, 1h ≈ 0.3%)
-  const volScale = Math.sqrt(ms / 3_600_000) * 0.003
-
   for (let i = count - 1; i >= 0; i--) {
-    const s = i * 17 + symbol.charCodeAt(0) * 7 + ivHash
+    const s = i * 17 + symbol.charCodeAt(0) + (interval.charCodeAt(0) || 0)
     const r1 = rand(s)
     const r2 = rand(s + 1)
     const r3 = rand(s + 2)
     const r4 = rand(s + 3)
 
-    const vol = price * volScale
+    const vol = price * 0.003
     const trend = (r1 - 0.5) * vol * 2.5
     const open = price
     const close = price + trend
@@ -82,7 +78,11 @@ export function generateKlines(symbol, interval, count = 120) {
  * Fetch klines with automatic fallback to mock data.
  * Returns { data, isMock } so UI can show an indicator.
  */
-export async function loadKlines(symbol, interval, limit = 120) {
+export async function loadKlines(
+  symbol: string,
+  interval: string,
+  limit: number = 120
+): Promise<KlineLoadResult> {
   try {
     const data = await fetchKlines(symbol, interval, limit)
     return { data, isMock: false }
@@ -99,12 +99,12 @@ export async function loadKlines(symbol, interval, limit = 120) {
 function createReconnect() {
   let delay = 1000
   return {
-    next() {
+    next(): number {
       const d = delay
       delay = Math.min(delay * 2, 30000)
       return d
     },
-    reset() {
+    reset(): void {
       delay = 1000
     },
   }
@@ -116,12 +116,17 @@ function createReconnect() {
  * WebSocket hook for real-time kline updates from Binance.
  * Returns connection status: 'connected' | 'reconnecting' | 'disconnected'
  */
-export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
+export function useKlineWebSocket(
+  symbol: string,
+  interval: string,
+  klines: Kline[] | null,
+  onUpdate: (klines: Kline[]) => void
+): WsStatus {
   const onUpdateRef = useRef(onUpdate)
   const klinesRef = useRef(klines)
-  const [wsStatus, setWsStatus] = useState('disconnected')
+  const [wsStatus, setWsStatus] = useState<WsStatus>('disconnected')
 
-  // Always-fresh ref for callback (runs every render intentionally)
+  // Always-fresh ref for callback
   useEffect(() => {
     onUpdateRef.current = onUpdate
   })
@@ -138,27 +143,27 @@ export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
 
     const wsSymbol = symbol.replace('/', '').toLowerCase()
     const stream = `${wsSymbol}@kline_${interval}`
-    let ws = null
-    let reconnectTimer = null
+    let ws: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let alive = true
     const backoff = createReconnect()
 
-    function connect() {
+    function connect(): void {
       setWsStatus('reconnecting')
       ws = new WebSocket(`${WS_BASE}/${stream}`)
 
-      ws.onopen = () => {
+      ws.onopen = (): void => {
         setWsStatus('connected')
         backoff.reset()
       }
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: MessageEvent): void => {
         try {
-          const msg = JSON.parse(event.data)
+          const msg = JSON.parse(event.data as string)
           const k = msg.k
           if (!k) return
 
-          const candle = {
+          const candle: Kline = {
             time: k.t,
             open: +k.o,
             high: +k.h,
@@ -183,18 +188,18 @@ export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
             onUpdateRef.current(updated)
           }
         } catch (err) {
-          console.warn('[ws] parse error:', err.message)
+          console.warn('[ws] parse error:', (err as Error).message)
         }
       }
 
-      ws.onclose = () => {
+      ws.onclose = (): void => {
         if (alive) {
           setWsStatus('reconnecting')
           reconnectTimer = setTimeout(connect, backoff.next())
         }
       }
 
-      ws.onerror = () => {
+      ws.onerror = (): void => {
         ws?.close()
       }
     }
@@ -203,7 +208,7 @@ export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
 
     return () => {
       alive = false
-      clearTimeout(reconnectTimer)
+      if (reconnectTimer) clearTimeout(reconnectTimer)
       setWsStatus('disconnected')
       ws?.close()
     }
@@ -217,33 +222,31 @@ export function useKlineWebSocket(symbol, interval, klines, onUpdate) {
 /**
  * WebSocket hook for real-time ticker prices for all watchlist coins.
  * Subscribes to Binance combined miniTicker stream.
- * Returns { tickers: { BTCUSDT: { price, change }, ... }, status }
  */
-export function useTickerWebSocket() {
-  const [tickers, setTickers] = useState({})
-  const [status, setStatus] = useState('disconnected')
+export function useTickerWebSocket(): { tickers: TickerMap; status: WsStatus } {
+  const [tickers, setTickers] = useState<TickerMap>({})
+  const [status, setStatus] = useState<WsStatus>('disconnected')
 
   useEffect(() => {
-    // Combined stream: wss://stream.binance.com:9443/stream?streams=btcusdt@miniTicker/ethusdt@miniTicker/...
-    const streams = COINS.map((c) => c.symbol.toLowerCase() + '@miniTicker').join('/')
     const COMBINED_WS = 'wss://stream.binance.com:9443/stream'
-    let ws = null
-    let reconnectTimer = null
+    const streams = COINS.map((c) => c.symbol.toLowerCase() + '@miniTicker').join('/')
+    let ws: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let alive = true
     const backoff = createReconnect()
 
-    function connect() {
+    function connect(): void {
       setStatus('reconnecting')
       ws = new WebSocket(`${COMBINED_WS}?streams=${streams}`)
 
-      ws.onopen = () => {
+      ws.onopen = (): void => {
         setStatus('connected')
         backoff.reset()
       }
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: MessageEvent): void => {
         try {
-          const msg = JSON.parse(event.data)
+          const msg = JSON.parse(event.data as string)
           // Combined stream wraps payload in { stream, data }
           const d = msg.data
           if (!d || !d.s) return
@@ -259,25 +262,27 @@ export function useTickerWebSocket() {
             },
           }))
         } catch (err) {
-          console.warn('[ticker-ws] parse error:', err.message)
+          console.warn('[ticker-ws] parse error:', (err as Error).message)
         }
       }
 
-      ws.onclose = () => {
+      ws.onclose = (): void => {
         if (alive) {
           setStatus('reconnecting')
           reconnectTimer = setTimeout(connect, backoff.next())
         }
       }
 
-      ws.onerror = () => ws?.close()
+      ws.onerror = (): void => {
+        ws?.close()
+      }
     }
 
     connect()
 
     return () => {
       alive = false
-      clearTimeout(reconnectTimer)
+      if (reconnectTimer) clearTimeout(reconnectTimer)
       setStatus('disconnected')
       ws?.close()
     }

@@ -56,8 +56,8 @@ describe('pad2', () => {
   })
 
   it('handles string input', () => {
-    expect(pad2('3')).toBe('03')
-    expect(pad2('42')).toBe('42')
+    expect(pad2(3)).toBe('03')
+    expect(pad2(42)).toBe('42')
   })
 })
 
@@ -86,8 +86,15 @@ describe('rand', () => {
 })
 
 describe('calcMA', () => {
-  const makeData = (closes) =>
-    closes.map((c, i) => ({ time: i, open: c, high: c, low: c, close: c, volume: 1 }))
+  const makeData = (closes: number[]) =>
+    closes.map((c: number, i: number) => ({
+      time: i,
+      open: c,
+      high: c,
+      low: c,
+      close: c,
+      volume: 1,
+    }))
 
   it('returns null for indices before the period window', () => {
     const data = makeData([10, 20, 30, 40, 50])

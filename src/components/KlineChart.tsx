@@ -1,20 +1,21 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { colors, fonts } from '../theme'
 import { fmtPrice, fmtVol, pad2, calcMA } from '../utils/helpers'
-
-/* ═══════════════════ CONSTANTS ═══════════════════ */
-const PAD = { top: 28, right: 82, bottom: 38, left: 14 }
+import type { Kline } from '../types'
 
 /* ═══════════════════ RESIZE HOOK ═══════════════════ */
-function useContainerSize(ref) {
-  const [size, setSize] = useState(null)
+function useContainerSize(ref: React.RefObject<HTMLDivElement | null>): {
+  width: number
+  height: number
+} | null {
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
 
-    let rafId = null
-    const update = () => {
+    let rafId: number | null = null
+    const update = (): void => {
       if (rafId) cancelAnimationFrame(rafId)
       rafId = requestAnimationFrame(() => {
         const { width, height } = el.getBoundingClientRect()
@@ -34,11 +35,21 @@ function useContainerSize(ref) {
   return size
 }
 
+/* ═══════════════════ PROPS ═══════════════════ */
+interface KlineChartProps {
+  klines: Kline[] | null
+  showMA7: boolean
+  showMA25: boolean
+}
+
+/* ═══════════════════ CONSTANTS ═══════════════════ */
+const PAD = { top: 28, right: 82, bottom: 38, left: 14 }
+
 /* ═══════════════════ KLINE CHART ═══════════════════ */
-export default function KlineChart({ klines, showMA7, showMA25 }) {
-  const containerRef = useRef(null)
+export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const size = useContainerSize(containerRef)
-  const [hoveredIdx, setHoveredIdx] = useState(null)
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
   const width = size?.width ?? 0
   const height = size?.height ?? 0
@@ -62,7 +73,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }) {
 
     const candleW = chartW / klines.length
     const bodyW = Math.max(1, candleW * 0.55)
-    const toY = (price) => PAD.top + (1 - (price - pMin) / pRange) * chartH
+    const toY = (price: number): number => PAD.top + (1 - (price - pMin) / pRange) * chartH
 
     const pts = klines.map((k, i) => ({
       ...k,
@@ -75,7 +86,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }) {
       up: k.close >= k.open,
     }))
 
-    const buildMAPath = (values) => {
+    const buildMAPath = (values: (number | null)[]): string => {
       let started = false
       return values.reduce((acc, v, i) => {
         if (v == null) return acc
@@ -90,7 +101,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }) {
     const ma7Path = buildMAPath(calcMA(klines, 7))
     const ma25Path = buildMAPath(calcMA(klines, 25))
 
-    const gridLines = []
+    const gridLines: { y: number; price: number; edge: boolean }[] = []
     for (let i = 0; i <= 5; i++) {
       const p = pMin + (pRange * i) / 5
       gridLines.push({ y: toY(p), price: p, edge: i === 0 || i === 5 })
@@ -113,7 +124,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }) {
 
   /* Mouse handling — useCallback avoids re-creating on every render */
   const handleMouseMove = useCallback(
-    (e) => {
+    (e: React.MouseEvent<HTMLDivElement>) => {
       if (!chart) return
       const rect = e.currentTarget.getBoundingClientRect()
       const mx = e.clientX - rect.left
@@ -370,7 +381,7 @@ const styles = {
   container: {
     width: '100%',
     height: '100%',
-    position: 'relative',
+    position: 'relative' as const,
     cursor: 'crosshair',
     overflow: 'hidden',
   },
@@ -384,7 +395,7 @@ const styles = {
     fontSize: 14,
   },
   ohlcv: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: 6,
     left: 22,
     display: 'flex',
@@ -392,8 +403,8 @@ const styles = {
     fontSize: 11,
     fontFamily: fonts.mono,
     color: colors.text2,
-    pointerEvents: 'none',
-    userSelect: 'none',
+    pointerEvents: 'none' as const,
+    userSelect: 'none' as const,
     background: 'rgba(255,255,255,0.88)',
     padding: '3px 10px',
     borderRadius: 4,

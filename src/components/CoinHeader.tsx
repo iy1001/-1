@@ -1,5 +1,18 @@
 import { colors, fonts, INTERVALS, SEED_PRICES } from '../theme'
 import { fmtPrice, fmtVol } from '../utils/helpers'
+import type { Coin, Kline } from '../types'
+
+/* ═══════════════════ PROPS ═══════════════════ */
+interface CoinHeaderProps {
+  coin: Coin
+  klines: Kline[] | null
+  interval: string
+  onChangeInterval: (interval: string) => void
+  showMA7: boolean
+  onToggleMA7: () => void
+  showMA25: boolean
+  onToggleMA25: () => void
+}
 
 /* ═══════════════════ COIN HEADER ═══════════════════ */
 export default function CoinHeader({
@@ -11,7 +24,7 @@ export default function CoinHeader({
   onToggleMA7,
   showMA25,
   onToggleMA25,
-}) {
+}: CoinHeaderProps) {
   const last = klines?.[klines.length - 1]
   const price = last?.close ?? SEED_PRICES[coin.symbol] ?? 0
   const open = klines?.[0]?.open ?? price
@@ -82,10 +95,12 @@ export default function CoinHeader({
 
       {/* MA toggles */}
       <div style={styles.maToggles}>
-        {[
-          { label: 'MA7', color: colors.ma7, on: showMA7, toggle: onToggleMA7 },
-          { label: 'MA25', color: colors.ma25, on: showMA25, toggle: onToggleMA25 },
-        ].map((m) => (
+        {(
+          [
+            { label: 'MA7', color: colors.ma7, on: showMA7, toggle: onToggleMA7 },
+            { label: 'MA25', color: colors.ma25, on: showMA25, toggle: onToggleMA25 },
+          ] as const
+        ).map((m) => (
           <button
             key={m.label}
             onClick={m.toggle}
@@ -111,7 +126,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 28,
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
     borderBottom: `1px solid ${colors.border}`,
     background: colors.bg,
     flexShrink: 0,

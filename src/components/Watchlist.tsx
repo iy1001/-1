@@ -1,9 +1,19 @@
 import { useState } from 'react'
 import { colors, fonts, COINS, SEED_PRICES } from '../theme'
 import { fmtPrice, fmtVol } from '../utils/helpers'
+import type { TickerMap } from '../types'
+
+/* ═══════════════════ PROPS ═══════════════════ */
+interface WatchlistProps {
+  selected: string
+  onSelect: (symbol: string) => void
+  favorites: string[]
+  onToggleFav: (symbol: string) => void
+  tickers: TickerMap
+}
 
 /* ═══════════════════ STAR ICON ═══════════════════ */
-function StarIcon({ filled }) {
+function StarIcon({ filled }: { filled: boolean }) {
   return (
     <svg
       width="14"
@@ -19,8 +29,14 @@ function StarIcon({ filled }) {
 }
 
 /* ═══════════════════ WATCHLIST ═══════════════════ */
-export default function Watchlist({ selected, onSelect, favorites, onToggleFav, tickers = {} }) {
-  const [hovered, setHovered] = useState(null)
+export default function Watchlist({
+  selected,
+  onSelect,
+  favorites,
+  onToggleFav,
+  tickers = {},
+}: WatchlistProps) {
+  const [hovered, setHovered] = useState<string | null>(null)
 
   // Sort: favorites first, then the rest
   const sortedCoins = [...COINS].sort((a, b) => {
@@ -92,7 +108,7 @@ const styles = {
     borderRight: `1px solid ${colors.border}`,
     background: colors.bg,
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     flexShrink: 0,
     overflow: 'hidden',
   },
@@ -103,11 +119,11 @@ const styles = {
     fontWeight: 700,
     color: colors.text3,
     letterSpacing: '0.08em',
-    textTransform: 'uppercase',
+    textTransform: 'uppercase' as const,
   },
   list: {
     flex: 1,
-    overflowY: 'auto',
+    overflowY: 'auto' as const,
     padding: '0 6px 8px',
   },
   item: {
@@ -130,7 +146,7 @@ const styles = {
   icon: {
     fontSize: 15,
     width: 24,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     color: colors.text2,
     fontWeight: 600,
   },
@@ -151,7 +167,7 @@ const styles = {
     marginTop: 1,
   },
   prices: {
-    textAlign: 'right',
+    textAlign: 'right' as const,
   },
   price: {
     fontFamily: fonts.mono,

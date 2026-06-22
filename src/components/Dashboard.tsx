@@ -4,12 +4,13 @@ import { loadKlines, useKlineWebSocket, useTickerWebSocket } from '../utils/api'
 import KlineChart from './KlineChart'
 import CoinHeader from './CoinHeader'
 import Watchlist from './Watchlist'
+import type { Kline, Coin } from '../types'
 
 const FAV_KEY = 'td_favorites'
 
-function loadFavorites() {
+function loadFavorites(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(FAV_KEY)) || []
+    return JSON.parse(localStorage.getItem(FAV_KEY) || '[]') as string[]
   } catch {
     return []
   }
@@ -19,13 +20,13 @@ function loadFavorites() {
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT')
   const [interval, setInterval] = useState('1h')
-  const [klines, setKlines] = useState(null)
+  const [klines, setKlines] = useState<Kline[] | null>(null)
   const [isMockData, setIsMockData] = useState(false)
   const [showMA7, setShowMA7] = useState(true)
   const [showMA25, setShowMA25] = useState(true)
-  const [favorites, setFavorites] = useState(loadFavorites)
+  const [favorites, setFavorites] = useState<string[]>(loadFavorites)
 
-  const coin = COINS.find((c) => c.symbol === symbol) || COINS[0]
+  const coin: Coin = COINS.find((c) => c.symbol === symbol) || COINS[0]
 
   /* Fetch klines on symbol/interval change */
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function Dashboard() {
   }, [favorites])
 
   /* Real-time kline WebSocket */
-  const handleWSUpdate = useCallback((newKlines) => {
+  const handleWSUpdate = useCallback((newKlines: Kline[]) => {
     setKlines(newKlines)
   }, [])
 
@@ -59,7 +60,7 @@ export default function Dashboard() {
   /* Real-time ticker prices for all coins */
   const { tickers } = useTickerWebSocket()
 
-  const toggleFav = useCallback((sym) => {
+  const toggleFav = useCallback((sym: string) => {
     setFavorites((prev) => (prev.includes(sym) ? prev.filter((s) => s !== sym) : [...prev, sym]))
   }, [])
 
@@ -122,7 +123,7 @@ const styles = {
     width: '100%',
     height: '100vh',
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     background: colors.bg,
     fontFamily: fonts.sans,
     overflow: 'hidden',
@@ -180,13 +181,13 @@ const styles = {
   main: {
     flex: 1,
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     overflow: 'hidden',
     minWidth: 0,
   },
   chartArea: {
     flex: 1,
-    position: 'relative',
+    position: 'relative' as const,
     minHeight: 0,
   },
 }

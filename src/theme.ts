@@ -1,3 +1,5 @@
+import type { Coin, Interval } from './types'
+
 /* ═══════════════════ THEME ═══════════════════ */
 export const colors = {
   bg: '#FFFFFF',
@@ -16,15 +18,15 @@ export const colors = {
   crossBg: '#424242',
   hover: '#F5F5F5',
   accent: '#4285F4',
-}
+} as const
 
 export const fonts = {
   sans: "'Outfit', 'Inter', system-ui, -apple-system, sans-serif",
   mono: "'JetBrains Mono', 'Fira Code', Consolas, 'Courier New', monospace",
-}
+} as const
 
 /* ═══════════════════ COINS ═══════════════════ */
-export const COINS = [
+export const COINS: Coin[] = [
   { symbol: 'BTCUSDT', base: 'BTC', name: 'Bitcoin', icon: '₿' },
   { symbol: 'ETHUSDT', base: 'ETH', name: 'Ethereum', icon: 'Ξ' },
   { symbol: 'SOLUSDT', base: 'SOL', name: 'Solana', icon: '◎' },
@@ -36,13 +38,13 @@ export const COINS = [
 ]
 
 /* ═══════════════════ INTERVALS ═══════════════════ */
-export const INTERVALS = [
+export const INTERVALS: Interval[] = [
   { value: '1m', label: '1m', ms: 60_000 },
   { value: '1h', label: '1h', ms: 3_600_000 },
 ]
 
 /* ═══════════════════ SEED PRICES ═══════════════════ */
-export const SEED_PRICES = {
+export const SEED_PRICES: Record<string, number> = {
   BTCUSDT: 64200,
   ETHUSDT: 1730,
   SOLUSDT: 74,
