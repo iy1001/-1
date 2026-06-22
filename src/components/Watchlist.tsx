@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { colors, fonts, COINS, SEED_PRICES } from '../theme'
+import { COINS, SEED_PRICES } from '../theme'
 import { fmtPrice, fmtVol } from '../utils/helpers'
 import type { TickerMap } from '../types'
 
@@ -19,8 +19,8 @@ function StarIcon({ filled }: { filled: boolean }) {
       width="14"
       height="14"
       viewBox="0 0 24 24"
-      fill={filled ? '#FFD600' : 'none'}
-      stroke={filled ? '#FFD600' : '#C4C4C4'}
+      fill={filled ? 'var(--color-star)' : 'none'}
+      stroke={filled ? 'var(--color-star)' : 'var(--color-star-empty)'}
       strokeWidth="2"
     >
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -47,8 +47,8 @@ export default function Watchlist({
 
   return (
     <div style={styles.sidebar}>
-      <div style={styles.title}>Watchlist</div>
-      <div style={styles.list}>
+      <div className="watchlist-title" style={styles.title}>Watchlist</div>
+      <div className="watchlist-list" style={styles.list}>
         {sortedCoins.map((coin) => {
           const active = coin.symbol === selected
           const isHovered = hovered === coin.symbol
@@ -60,13 +60,20 @@ export default function Watchlist({
           return (
             <div
               key={coin.symbol}
+              className={`watchlist-item${active ? ' active' : ''}`}
               onClick={() => onSelect(coin.symbol)}
               onMouseEnter={() => setHovered(coin.symbol)}
               onMouseLeave={() => setHovered(null)}
               style={{
                 ...styles.item,
-                background: active ? colors.surface : isHovered ? colors.hover : 'transparent',
-                borderLeft: active ? `3px solid ${colors.ma25}` : '3px solid transparent',
+                background: active
+                  ? 'var(--color-surface)'
+                  : isHovered
+                    ? 'var(--color-hover)'
+                    : 'transparent',
+                borderLeft: active
+                  ? '3px solid var(--color-ma25)'
+                  : '3px solid transparent',
               }}
             >
               <button
@@ -88,7 +95,7 @@ export default function Watchlist({
 
               <div style={styles.prices}>
                 <div style={styles.price}>${fmtPrice(price)}</div>
-                <div style={{ ...styles.change, color: up ? colors.up : colors.down }}>
+                <div style={{ ...styles.change, color: up ? 'var(--color-up)' : 'var(--color-down)' }}>
                   {up ? '+' : ''}
                   {change.toFixed(2)}%
                 </div>
@@ -105,8 +112,9 @@ export default function Watchlist({
 const styles = {
   sidebar: {
     width: 210,
-    borderRight: `1px solid ${colors.border}`,
-    background: colors.bg,
+    height: '100%',
+    borderRight: '1px solid var(--color-border)',
+    background: 'var(--color-bg)',
     display: 'flex',
     flexDirection: 'column' as const,
     flexShrink: 0,
@@ -114,10 +122,10 @@ const styles = {
   },
   title: {
     padding: '14px 16px 10px',
-    fontFamily: fonts.sans,
+    fontFamily: 'var(--font-sans)',
     fontSize: 11,
     fontWeight: 700,
-    color: colors.text3,
+    color: 'var(--color-text3)',
     letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
   },
@@ -147,7 +155,7 @@ const styles = {
     fontSize: 15,
     width: 24,
     textAlign: 'center' as const,
-    color: colors.text2,
+    color: 'var(--color-text2)',
     fontWeight: 600,
   },
   info: {
@@ -155,28 +163,28 @@ const styles = {
     minWidth: 0,
   },
   base: {
-    fontFamily: fonts.sans,
+    fontFamily: 'var(--font-sans)',
     fontSize: 13,
     fontWeight: 600,
-    color: colors.text1,
+    color: 'var(--color-text1)',
   },
   vol: {
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 9,
-    color: colors.text3,
+    color: 'var(--color-text3)',
     marginTop: 1,
   },
   prices: {
     textAlign: 'right' as const,
   },
   price: {
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 12,
     fontWeight: 500,
-    color: colors.text1,
+    color: 'var(--color-text1)',
   },
   change: {
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 10,
     marginTop: 1,
   },

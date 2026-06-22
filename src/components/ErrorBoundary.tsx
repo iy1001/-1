@@ -1,5 +1,4 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react'
-import { colors, fonts } from '../theme'
 
 interface Props {
   children: ReactNode
@@ -52,22 +51,22 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100vh',
-    background: colors.bg,
-    fontFamily: fonts.sans,
+    background: 'var(--color-bg)',
+    fontFamily: 'var(--font-sans)',
   },
   card: {
     textAlign: 'center' as const,
     padding: 40,
     borderRadius: 12,
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
+    background: 'var(--color-surface)',
+    border: '1px solid var(--color-border)',
     maxWidth: 400,
   },
   icon: {
     width: 48,
     height: 48,
     borderRadius: '50%',
-    background: colors.down,
+    background: 'var(--color-down)',
     color: '#FFF',
     fontSize: 24,
     fontWeight: 700,
@@ -79,12 +78,12 @@ const styles = {
   title: {
     fontSize: 18,
     fontWeight: 700,
-    color: colors.text1,
+    color: 'var(--color-text1)',
     marginBottom: 8,
   },
   msg: {
     fontSize: 13,
-    color: colors.text2,
+    color: 'var(--color-text2)',
     marginBottom: 20,
     lineHeight: 1.5,
   },
@@ -92,7 +91,7 @@ const styles = {
     padding: '8px 24px',
     borderRadius: 6,
     border: 'none',
-    background: colors.accent,
+    background: 'var(--color-accent)',
     color: '#FFF',
     fontSize: 13,
     fontWeight: 600,

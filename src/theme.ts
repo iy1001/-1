@@ -40,7 +40,13 @@ export const COINS: Coin[] = [
 /* ═══════════════════ INTERVALS ═══════════════════ */
 export const INTERVALS: Interval[] = [
   { value: '1m', label: '1m', ms: 60_000 },
+  { value: '5m', label: '5m', ms: 300_000 },
+  { value: '15m', label: '15m', ms: 900_000 },
+  { value: '30m', label: '30m', ms: 1_800_000 },
   { value: '1h', label: '1h', ms: 3_600_000 },
+  { value: '4h', label: '4h', ms: 14_400_000 },
+  { value: '1d', label: '1D', ms: 86_400_000 },
+  { value: '1w', label: '1W', ms: 604_800_000 },
 ]
 
 /* ═══════════════════ SEED PRICES ═══════════════════ */

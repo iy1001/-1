@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { colors, fonts } from '../theme'
 import { fmtPrice, fmtVol, pad2, calcMA } from '../utils/helpers'
 import type { Kline } from '../types'
 
@@ -143,7 +142,9 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
   if (!chart) {
     return (
       <div ref={containerRef} style={styles.container}>
-        <div style={styles.loading}>Loading chart...</div>
+        <div style={styles.loading}>
+          <div style={styles.skeletonBar} />
+        </div>
       </div>
     )
   }
@@ -170,8 +171,8 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
         </defs>
 
         {/* Background */}
-        <rect x="0" y="0" width={width} height={height} fill={colors.surface} />
-        <rect x={PAD.left} y={PAD.top} width={chartW} height={chartH} fill="#FFFFFF" rx="4" />
+        <rect x="0" y="0" width={width} height={height} fill="var(--color-surface)" />
+        <rect x={PAD.left} y={PAD.top} width={chartW} height={chartH} fill="var(--color-chart-bg)" rx="4" />
 
         {/* Grid lines */}
         {gridLines.map((g, i) => (
@@ -181,16 +182,16 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
               y1={g.y}
               x2={PAD.left + chartW}
               y2={g.y}
-              stroke={g.edge ? colors.border : colors.borderLight}
+              stroke={g.edge ? 'var(--color-border)' : 'var(--color-border-light)'}
               strokeWidth="1"
               strokeDasharray={g.edge ? 'none' : '3,3'}
             />
             <text
               x={PAD.left + chartW + 8}
               y={g.y + 4}
-              fill={colors.text3}
+              fill="var(--color-text3)"
               fontSize="11"
-              fontFamily={fonts.mono}
+              fontFamily="var(--font-mono)"
             >
               {fmtPrice(g.price)}
             </text>
@@ -203,9 +204,9 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
             key={i}
             x={t.x}
             y={height - 10}
-            fill={colors.text3}
+            fill="var(--color-text3)"
             fontSize="10"
-            fontFamily={fonts.mono}
+            fontFamily="var(--font-mono)"
             textAnchor="middle"
           >
             {t.label}
@@ -217,7 +218,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
           <path
             d={ma25Path}
             fill="none"
-            stroke={colors.ma25}
+            stroke="var(--color-ma25)"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -228,7 +229,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
           <path
             d={ma7Path}
             fill="none"
-            stroke={colors.ma7}
+            stroke="var(--color-ma7)"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -245,7 +246,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
                 y1={p.hY}
                 x2={p.x}
                 y2={p.lY}
-                stroke={p.up ? colors.up : colors.down}
+                stroke={p.up ? 'var(--color-up)' : 'var(--color-down)'}
                 strokeWidth="1"
               />
               <rect
@@ -253,7 +254,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
                 y={Math.min(p.oY, p.cY)}
                 width={bodyW}
                 height={Math.max(Math.abs(p.cY - p.oY), 1)}
-                fill={p.up ? colors.up : colors.down}
+                fill={p.up ? 'var(--color-up)' : 'var(--color-down)'}
                 rx={bodyW > 4 ? 1 : 0}
               />
             </g>
@@ -266,7 +267,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
           y1={lastY}
           x2={PAD.left + chartW}
           y2={lastY}
-          stroke={lastUp ? colors.up : colors.down}
+          stroke={lastUp ? 'var(--color-up)' : 'var(--color-down)'}
           strokeWidth="1"
           strokeDasharray="4,3"
           opacity="0.6"
@@ -277,14 +278,14 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
           width="74"
           height="22"
           rx="4"
-          fill={lastUp ? colors.up : colors.down}
+          fill={lastUp ? 'var(--color-up)' : 'var(--color-down)'}
         />
         <text
           x={PAD.left + chartW + 39}
           y={lastY + 4}
           fill="#FFF"
           fontSize="11"
-          fontFamily={fonts.mono}
+          fontFamily="var(--font-mono)"
           textAnchor="middle"
           fontWeight="600"
         >
@@ -299,7 +300,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
               y1={PAD.top}
               x2={hd.x}
               y2={PAD.top + chartH}
-              stroke={colors.cross}
+              stroke="var(--color-cross)"
               strokeWidth="0.8"
               strokeDasharray="3,3"
             />
@@ -308,7 +309,7 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
               y1={hd.cY}
               x2={PAD.left + chartW}
               y2={hd.cY}
-              stroke={colors.cross}
+              stroke="var(--color-cross)"
               strokeWidth="0.8"
               strokeDasharray="3,3"
             />
@@ -318,14 +319,14 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
               width="74"
               height="20"
               rx="3"
-              fill={colors.crossBg}
+              fill="var(--color-cross-bg)"
             />
             <text
               x={PAD.left + chartW + 39}
               y={hd.cY + 4}
               fill="#FFF"
               fontSize="10"
-              fontFamily={fonts.mono}
+              fontFamily="var(--font-mono)"
               textAnchor="middle"
             >
               {fmtPrice(hd.close)}
@@ -336,14 +337,14 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
               width="64"
               height="18"
               rx="3"
-              fill={colors.crossBg}
+              fill="var(--color-cross-bg)"
             />
             <text
               x={hd.x}
               y={height - 15}
               fill="#FFF"
               fontSize="9"
-              fontFamily={fonts.mono}
+              fontFamily="var(--font-mono)"
               textAnchor="middle"
             >
               {pad2(new Date(hd.time).getHours())}:{pad2(new Date(hd.time).getMinutes())}
@@ -356,19 +357,19 @@ export default function KlineChart({ klines, showMA7, showMA25 }: KlineChartProp
       {hd && (
         <div style={styles.ohlcv}>
           <span>
-            O <b style={{ color: hd.up ? colors.up : colors.down }}>{fmtPrice(hd.open)}</b>
+            O <b style={{ color: hd.up ? 'var(--color-up)' : 'var(--color-down)' }}>{fmtPrice(hd.open)}</b>
           </span>
           <span>
-            H <b style={{ color: hd.up ? colors.up : colors.down }}>{fmtPrice(hd.high)}</b>
+            H <b style={{ color: hd.up ? 'var(--color-up)' : 'var(--color-down)' }}>{fmtPrice(hd.high)}</b>
           </span>
           <span>
-            L <b style={{ color: hd.up ? colors.up : colors.down }}>{fmtPrice(hd.low)}</b>
+            L <b style={{ color: hd.up ? 'var(--color-up)' : 'var(--color-down)' }}>{fmtPrice(hd.low)}</b>
           </span>
           <span>
-            C <b style={{ color: hd.up ? colors.up : colors.down }}>{fmtPrice(hd.close)}</b>
+            C <b style={{ color: hd.up ? 'var(--color-up)' : 'var(--color-down)' }}>{fmtPrice(hd.close)}</b>
           </span>
           <span>
-            Vol <b style={{ color: colors.text1 }}>{fmtVol(hd.volume)}</b>
+            Vol <b style={{ color: 'var(--color-text1)' }}>{fmtVol(hd.volume)}</b>
           </span>
         </div>
       )}
@@ -390,9 +391,16 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    color: colors.text3,
-    fontFamily: fonts.sans,
+    color: 'var(--color-text3)',
+    fontFamily: 'var(--font-sans)',
     fontSize: 14,
+  },
+  skeletonBar: {
+    width: '60%',
+    height: 8,
+    borderRadius: 4,
+    background: 'var(--color-border)',
+    animation: 'skeleton-pulse 1.5s ease-in-out infinite',
   },
   ohlcv: {
     position: 'absolute' as const,
@@ -401,11 +409,11 @@ const styles = {
     display: 'flex',
     gap: 10,
     fontSize: 11,
-    fontFamily: fonts.mono,
-    color: colors.text2,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--color-text2)',
     pointerEvents: 'none' as const,
     userSelect: 'none' as const,
-    background: 'rgba(255,255,255,0.88)',
+    background: 'var(--color-tooltip-bg)',
     padding: '3px 10px',
     borderRadius: 4,
   },

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { colors, fonts, COINS } from '../theme'
+import { COINS } from '../theme'
 import { loadKlines, useKlineWebSocket, useTickerWebSocket } from '../utils/api'
+import { useTheme } from '../hooks/useTheme'
 import KlineChart from './KlineChart'
 import CoinHeader from './CoinHeader'
 import Watchlist from './Watchlist'
@@ -25,7 +26,9 @@ export default function Dashboard() {
   const [showMA7, setShowMA7] = useState(true)
   const [showMA25, setShowMA25] = useState(true)
   const [favorites, setFavorites] = useState<string[]>(loadFavorites)
+  const [toasts, setToasts] = useState<{ id: number; msg: string }[]>([])
 
+  const { theme, toggleTheme } = useTheme()
   const coin: Coin = COINS.find((c) => c.symbol === symbol) || COINS[0]
 
   /* Fetch klines on symbol/interval change */
@@ -60,41 +63,65 @@ export default function Dashboard() {
   /* Real-time ticker prices for all coins */
   const { tickers } = useTickerWebSocket()
 
+  const addToast = useCallback((msg: string) => {
+    const id = Date.now()
+    setToasts((prev) => [...prev, { id, msg }])
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+    }, 3000)
+  }, [])
+
+  /* Toast on WS disconnection */
+  useEffect(() => {
+    if (wsStatus === 'disconnected') {
+      addToast('WebSocket disconnected')
+    }
+  }, [wsStatus, addToast])
+
   const toggleFav = useCallback((sym: string) => {
     setFavorites((prev) => (prev.includes(sym) ? prev.filter((s) => s !== sym) : [...prev, sym]))
   }, [])
 
   return (
-    <div style={styles.root}>
-      <div style={styles.topBar}>
+    <div className="dashboard-root" style={styles.root}>
+      {/* Top Bar */}
+      <div className="dashboard-topbar" style={styles.topBar}>
         <div style={styles.topLeft}>
           <div
             style={{
               ...styles.statusDot,
-              background: wsStatus === 'connected' ? colors.up : colors.down,
-              boxShadow: `0 0 6px ${wsStatus === 'connected' ? colors.up : colors.down}80`,
+              background: wsStatus === 'connected' ? 'var(--color-up)' : 'var(--color-down)',
+              boxShadow: `0 0 6px ${wsStatus === 'connected' ? 'var(--color-up)' : 'var(--color-down)'}80`,
             }}
           />
           <span style={styles.topTitle}>Trading Dashboard</span>
           {isMockData && <span style={styles.mockBadge}>SIMULATED</span>}
         </div>
-        <div style={styles.topDate}>
-          {new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })}
+        <div style={styles.topRight}>
+          <span style={styles.topDate}>
+            {new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
+          <button onClick={toggleTheme} style={styles.themeBtn} title="Toggle theme">
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
         </div>
       </div>
 
-      <div style={styles.content}>
-        <Watchlist
-          selected={symbol}
-          onSelect={setSymbol}
-          favorites={favorites}
-          onToggleFav={toggleFav}
-          tickers={tickers}
-        />
+      {/* Content */}
+      <div className="dashboard-content" style={styles.content}>
+        <div className="watchlist-sidebar" style={styles.sidebarWrap}>
+          <Watchlist
+            selected={symbol}
+            onSelect={setSymbol}
+            favorites={favorites}
+            onToggleFav={toggleFav}
+            tickers={tickers}
+          />
+        </div>
 
         <div style={styles.main}>
           <CoinHeader
@@ -113,6 +140,15 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Toast notifications */}
+      <div className="toast-container">
+        {toasts.map((t) => (
+          <div key={t.id} className="toast">
+            {t.msg}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -124,17 +160,18 @@ const styles = {
     height: '100vh',
     display: 'flex',
     flexDirection: 'column' as const,
-    background: colors.bg,
-    fontFamily: fonts.sans,
+    background: 'var(--color-bg)',
+    fontFamily: 'var(--font-sans)',
     overflow: 'hidden',
+    transition: 'background 0.2s, color 0.2s',
   },
   topBar: {
     padding: '8px 20px',
-    borderBottom: `1px solid ${colors.border}`,
+    borderBottom: '1px solid var(--color-border)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    background: colors.bg,
+    background: 'var(--color-bg)',
     flexShrink: 0,
   },
   topLeft: {
@@ -142,36 +179,52 @@ const styles = {
     alignItems: 'center',
     gap: 8,
   },
+  topRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+  },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: '50%',
-    background: colors.up,
-    boxShadow: `0 0 6px ${colors.up}80`,
     transition: 'all 0.3s',
   },
   topTitle: {
-    fontFamily: fonts.sans,
+    fontFamily: 'var(--font-sans)',
     fontSize: 15,
     fontWeight: 700,
-    color: colors.text1,
+    color: 'var(--color-text1)',
     letterSpacing: '-0.02em',
   },
   mockBadge: {
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 9,
     fontWeight: 700,
-    color: '#E65100',
-    background: '#FFF3E0',
-    border: '1px solid #FFB74D',
+    color: 'var(--color-badge-text)',
+    background: 'var(--color-badge-bg)',
+    border: '1px solid var(--color-badge-border)',
     padding: '1px 6px',
     borderRadius: 3,
     letterSpacing: '0.05em',
   },
   topDate: {
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 11,
-    color: colors.text3,
+    color: 'var(--color-text3)',
+  },
+  themeBtn: {
+    background: 'none',
+    border: '1px solid var(--color-border)',
+    borderRadius: 6,
+    padding: '4px 8px',
+    cursor: 'pointer',
+    fontSize: 16,
+    lineHeight: 1,
+    transition: 'border-color 0.2s',
+  },
+  sidebarWrap: {
+    flexShrink: 0,
   },
   content: {
     flex: 1,

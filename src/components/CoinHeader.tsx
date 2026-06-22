@@ -1,4 +1,4 @@
-import { colors, fonts, INTERVALS, SEED_PRICES } from '../theme'
+import { INTERVALS, SEED_PRICES } from '../theme'
 import { fmtPrice, fmtVol } from '../utils/helpers'
 import type { Coin, Kline } from '../types'
 
@@ -36,7 +36,7 @@ export default function CoinHeader({
   const vol24 = klines ? klines.reduce((s, k) => s + k.volume, 0) : 0
 
   return (
-    <div style={styles.header}>
+    <div className="coin-header" style={styles.header}>
       {/* Coin identity */}
       <div style={styles.coinId}>
         <div style={styles.coinIcon}>{coin.icon}</div>
@@ -51,10 +51,10 @@ export default function CoinHeader({
 
       {/* Price */}
       <div style={styles.priceBlock}>
-        <div style={{ ...styles.price, color: up ? colors.up : colors.down }}>
+        <div style={{ ...styles.price, color: up ? 'var(--color-up)' : 'var(--color-down)' }}>
           ${fmtPrice(price)}
         </div>
-        <div style={{ ...styles.change, color: up ? colors.up : colors.down }}>
+        <div style={{ ...styles.change, color: up ? 'var(--color-up)' : 'var(--color-down)' }}>
           {up ? '+' : ''}
           {change.toFixed(2)}%
         </div>
@@ -77,15 +77,15 @@ export default function CoinHeader({
       </div>
 
       {/* Intervals */}
-      <div style={styles.intervals}>
+      <div className="interval-group" style={styles.intervals}>
         {INTERVALS.map((iv) => (
           <button
             key={iv.value}
             onClick={() => onChangeInterval(iv.value)}
             style={{
               ...styles.intervalBtn,
-              background: interval === iv.value ? colors.text1 : 'transparent',
-              color: interval === iv.value ? '#FFF' : colors.text2,
+              background: interval === iv.value ? 'var(--color-text1)' : 'transparent',
+              color: interval === iv.value ? 'var(--color-bg)' : 'var(--color-text2)',
             }}
           >
             {iv.label}
@@ -97,8 +97,8 @@ export default function CoinHeader({
       <div style={styles.maToggles}>
         {(
           [
-            { label: 'MA7', color: colors.ma7, on: showMA7, toggle: onToggleMA7 },
-            { label: 'MA25', color: colors.ma25, on: showMA25, toggle: onToggleMA25 },
+            { label: 'MA7', color: 'var(--color-ma7)', on: showMA7, toggle: onToggleMA7 },
+            { label: 'MA25', color: 'var(--color-ma25)', on: showMA25, toggle: onToggleMA25 },
           ] as const
         ).map((m) => (
           <button
@@ -107,8 +107,8 @@ export default function CoinHeader({
             style={{
               ...styles.maBtn,
               border: m.on ? `1.5px solid ${m.color}` : '1.5px solid transparent',
-              background: m.on ? m.color + '18' : colors.surface,
-              color: m.on ? m.color : colors.text3,
+              background: m.on ? `${m.color}18` : 'var(--color-surface)',
+              color: m.on ? m.color : 'var(--color-text3)',
             }}
           >
             {m.label}
@@ -127,8 +127,8 @@ const styles = {
     alignItems: 'center',
     gap: 28,
     flexWrap: 'wrap' as const,
-    borderBottom: `1px solid ${colors.border}`,
-    background: colors.bg,
+    borderBottom: '1px solid var(--color-border)',
+    background: 'var(--color-bg)',
     flexShrink: 0,
   },
   coinId: {
@@ -141,48 +141,48 @@ const styles = {
     width: 36,
     height: 36,
     borderRadius: '50%',
-    background: colors.surface,
+    background: 'var(--color-surface)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: colors.text2,
+    color: 'var(--color-text2)',
     fontWeight: 700,
   },
   coinName: {
-    fontFamily: fonts.sans,
+    fontFamily: 'var(--font-sans)',
     fontSize: 17,
     fontWeight: 700,
-    color: colors.text1,
+    color: 'var(--color-text1)',
     letterSpacing: '-0.02em',
   },
   coinPair: {
-    color: colors.text3,
+    color: 'var(--color-text3)',
     fontWeight: 400,
   },
   coinSub: {
-    fontFamily: fonts.sans,
+    fontFamily: 'var(--font-sans)',
     fontSize: 12,
-    color: colors.text3,
+    color: 'var(--color-text3)',
   },
   priceBlock: {},
   price: {
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 26,
     fontWeight: 700,
     letterSpacing: '-0.02em',
   },
   change: {
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 12,
   },
   stats: {
     display: 'flex',
     gap: 20,
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 12,
   },
-  statLabel: { color: colors.text3 },
-  statValue: { color: colors.text1 },
+  statLabel: { color: 'var(--color-text3)' },
+  statValue: { color: 'var(--color-text1)' },
   intervals: {
     display: 'flex',
     gap: 2,
@@ -193,7 +193,7 @@ const styles = {
     border: 'none',
     borderRadius: 6,
     cursor: 'pointer',
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontSize: 12,
     fontWeight: 500,
     transition: 'all 0.15s',
@@ -208,7 +208,7 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.15s',
     fontSize: 12,
-    fontFamily: fonts.mono,
+    fontFamily: 'var(--font-mono)',
     fontWeight: 600,
   },
 }
