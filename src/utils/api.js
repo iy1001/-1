@@ -47,14 +47,23 @@ export function generateKlines(symbol, interval, count = 120) {
   const out = []
   const now = Date.now()
 
+  // Hash full interval string so "1m" and "1h" produce different seeds
+  let ivHash = 0
+  for (let c = 0; c < interval.length; c++) {
+    ivHash = ivHash * 31 + interval.charCodeAt(c)
+  }
+
+  // Scale per-candle volatility by interval duration (1m ≈ 0.08%, 1h ≈ 0.3%)
+  const volScale = Math.sqrt(ms / 3_600_000) * 0.003
+
   for (let i = count - 1; i >= 0; i--) {
-    const s = i * 17 + symbol.charCodeAt(0) + (interval.charCodeAt(0) || 0)
+    const s = i * 17 + symbol.charCodeAt(0) * 7 + ivHash
     const r1 = rand(s)
     const r2 = rand(s + 1)
     const r3 = rand(s + 2)
     const r4 = rand(s + 3)
 
-    const vol = price * 0.003
+    const vol = price * volScale
     const trend = (r1 - 0.5) * vol * 2.5
     const open = price
     const close = price + trend
